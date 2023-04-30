@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: black;
+    }
+    #canvasContainer {
+      border: 5px solid white;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 80vh;
+      width: 80vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <script>
+      let spirals = [];
+      let numSpirals = 5;
+      let numPrisms = 300;
+      const goldenAngle = 137.5;
+
+      function setup() {
+        let canvasSize = min(windowWidth, windowHeight) * 0.8;
+        let canvas = createCanvas(canvasSize, canvasSize);
+        canvas.parent('canvasContainer');
+        background(0);
+        colorMode(HSB, 360, 100, 100);
+
+        for (let i = 0; i < numSpirals; i++) {
+          spirals[i] = {
+            x: random(width),
+            y: random(height),
+            angle: random(TWO_PI),
+            speed: random(0.5, 2),
+            scale: random(0.5, 1.5)
+          };
+        }
+      }
+
+      function draw() {
+        background(0, 0.1);
+
+        for (let s = 0; s < numSpirals; s++) {
+          let spiral = spirals[s];
+          spiral.angle += spiral.speed * 0.01;
+          let spiralX = spiral.x + spiral.scale * width / 4 * cos(spiral.angle);
+          let spiralY = spiral.y + spiral.scale * height / 4 * sin(spiral.angle);
+
+          push();
+          translate(spiralX, spiralY);
+
+          for (let i = 0; i < numPrisms; i++) {
+            let c = 5 * spiral.scale;
+            let r = c * sqrt(i);
+            let x = r * cos(spiral.angle);
+            let y = r * sin(spiral.angle);
+            let size = 5 * spiral.scale;
+            let hue = (spiral.angle * 2) % 360;
+
+            fill(hue, 80, 80);
+            noStroke();
+
+            ellipse(x, y, size, size);
+            spiral.angle += radians(goldenAngle);
+          }
+          pop();
+        }
+      }
+    </script>
+  </div>
+</body>
+</html>
