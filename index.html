@@ -13,6 +13,8 @@
       background-color: black;
     }
     #canvasContainer {
+      border: 5px solid white;
+      overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -22,73 +24,89 @@
 <body>
   <div id="canvasContainer">
     <script>
-      let video;
       let rectSize = 5;
       let rectSpacing = 5;
 
-      function preload() {
-        // Load your video here
-        video = createVideo('video-WEB.mp4');
-      }
-
       function setup() {
-        let canvas = createCanvas(video.width, video.height);
+        let canvasSize = min(windowWidth, windowHeight) * 0.9;
+        let canvasWidth = canvasSize * (4 / 5);
+        let canvasHeight = canvasSize;
+        let canvas = createCanvas(canvasWidth, canvasHeight);
         canvas.parent('canvasContainer');
-        video.hide(); // Hide the original video element
-        video.loop(); // Ensure the video is playing
         background(0);
         colorMode(HSB, 360, 100, 100);
         noStroke();
       }
 
+      function selectFlowerColor() {
+        const flowerColors = [
+          { hue: 0, saturation: 100, brightness: 100 }, // Red
+          { hue: 60, saturation: 100, brightness: 100 }, // Yellow
+          { hue: 240, saturation: 100, brightness: 100 }, // Blue
+        ];
+        return flowerColors[floor(random(0, flowerColors.length))];
+      }
+
       function draw() {
-        video.loadPixels(); // Load pixel information from the video frame
         background(0, 25);
         let gridSize = rectSize + rectSpacing;
 
-        // Dynamic focus point using sine and cosine functions
-        let angle = frameCount * 0.01;
-        let focusX = (width / 2) + cos(angle) * (width / 4);
-        let focusY = (height / 2) + sin(angle) * (height / 4);
+        let focusX1 = 0;
+        let focusY1 = 0;
+        let focusX2 = width;
+        let focusY2 = height;
 
         for (let x = 0; x < width; x += gridSize) {
           for (let y = 0; y < height; y += gridSize) {
-            let offsetX = abs(x - focusX);
-            let offsetY = abs(y - focusY);
-            let offset = map(offsetX + offsetY, 0, width, 0, TWO_PI);
-            let angle = frameCount * 0.01 + offset;
+            let offsetX1 = abs(x - focusX1);
+            let offsetY1 = abs(y - focusY1);
+            let offsetX2 = abs(x - focusX2);
+            let offsetY2 = abs(y - focusY2);
 
-            // Get the color of the current pixel
-            let index = (x + y * video.width) * 4;
-            let r = video.pixels[index];
-            let g = video.pixels[index + 1];
-            let b = video.pixels[index + 2];
+            let offset1 = map(offsetX1 + offsetY1, 0, width, 0, TWO_PI);
+            let offset2 = map(offsetX2 + offsetY2, 0, width, 0, TWO_PI);
 
-            // Convert RGB to HSB
-            let c = color(r, g, b);
-            let hue = hue(c);
-            let saturation = saturation(c);
-            let brightness = brightness(c);
+            let angle = frameCount * 0.01 + offset1;
 
-            fill(hue, saturation, brightness);
+            let sizeOffset = map(sin(angle * 2), -1, 1, -rectSize / 2, rectSize / 2);
+            sizeOffset = abs(sizeOffset) * 1.5;
 
+            let randomValue = random(1);
+            let smallerShapeFactor = 1;
+            let flowerColor = { hue: 120, saturation: 80, brightness: 90 };
+
+            if (randomValue > 0.95) {
+              flowerColor = selectFlowerColor();
+              smallerShapeFactor = 0.5;
+            }
+
+            fill(flowerColor.hue, flowerColor.saturation, flowerColor.brightness);
             rectMode(CENTER);
             push();
-            translate(x + gridSize / 2, y + gridSize / 2);
+                  translate(x + gridSize / 2, y + gridSize / 2);
             rotate(angle);
 
             let pulsateFactor = sin(frameCount * 0.05) * 0.2 + 1;
-            let size = rectSize * pulsateFactor;
+            let size = (rectSize + sizeOffset) * pulsateFactor * smallerShapeFactor;
 
-            // Shape variations based on distance from the focus point
-            if (offset < TWO_PI / 3) {
-              rect(0, 0, size, size);
-            } else if (offset < (2 * TWO_PI) / 3) {
-              triangle(-size / 2, size / 2, size / 2, size / 2
-              , 0, -size / 2);
-            } else {
-              ellipse(0, 0, size, size);
+            // Draw paint splatter (ellipse with randomly positioned lines)
+            let paintWidth = size + random(-size / 2, size / 2);
+            let paintHeight = size + random(-size / 2, size / 2);
+            ellipse(0, 0, paintWidth, paintHeight);
+
+            // Add lines to create a splatter effect
+            let numLines = floor(random(3, 8));
+            strokeWeight(1);
+            stroke(flowerColor.hue, flowerColor.saturation, flowerColor.brightness);
+            for (let i = 0; i < numLines; i++) {
+              let lineAngle = random(TWO_PI);
+              let lineLength = random(size / 2, size * 1.5);
+              let lineX = cos(lineAngle) * lineLength;
+              let lineY = sin(lineAngle) * lineLength;
+              line(0, 0, lineX, lineY);
             }
+
+            noStroke();
             pop();
           }
         }
@@ -97,5 +115,3 @@
   </div>
 </body>
 </html>
-``
-
