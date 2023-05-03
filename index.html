@@ -13,8 +13,6 @@
       background-color: black;
     }
     #canvasContainer {
-      border: 5px solid white;
-      overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -24,64 +22,80 @@
 <body>
   <div id="canvasContainer">
     <script>
-      let spirals = [];
-      let numSpirals = 5;
-      let numPrisms = 300;
-      const goldenAngle = 137.5;
+      let video;
+      let rectSize = 5;
+      let rectSpacing = 5;
+
+      function preload() {
+        // Load your video here
+        video = createVideo('video-WEB.mp4');
+      }
 
       function setup() {
-        let canvasSize = min(windowWidth, windowHeight) * 0.8;
-        let canvas = createCanvas(canvasSize, canvasSize);
+        let canvas = createCanvas(video.width, video.height);
         canvas.parent('canvasContainer');
+        video.hide(); // Hide the original video element
+        video.loop(); // Ensure the video is playing
         background(0);
         colorMode(HSB, 360, 100, 100);
-
-        let squareSize = min(width, height);
-        let canvasContainer = select('#canvasContainer');
-        canvasContainer.style('width', squareSize + 'px');
-        canvasContainer.style('height', squareSize + 'px');
-
-        for (let i = 0; i < numSpirals; i++) {
-          spirals[i] = {
-            x: random(width),
-            y: random(height),
-            angle: random(TWO_PI),
-            speed: random(0.5, 2),
-            scale: random(0.5, 1.5)
-          };
-        }
+        noStroke();
       }
 
       function draw() {
-        background(0, 0.1);
+        video.loadPixels(); // Load pixel information from the video frame
+        background(0, 25);
+        let gridSize = rectSize + rectSpacing;
 
-        for (let s = 0; s < numSpirals; s++) {
-          let spiral = spirals[s];
-          spiral.angle += spiral.speed * 0.01;
-          let spiralX = spiral.x + spiral.scale * width / 4 * cos(spiral.angle);
-          let spiralY = spiral.y + spiral.scale * height / 4 * sin(spiral.angle);
+        // Dynamic focus point using sine and cosine functions
+        let angle = frameCount * 0.01;
+        let focusX = (width / 2) + cos(angle) * (width / 4);
+        let focusY = (height / 2) + sin(angle) * (height / 4);
 
-          push();
-          translate(spiralX, spiralY);
+        for (let x = 0; x < width; x += gridSize) {
+          for (let y = 0; y < height; y += gridSize) {
+            let offsetX = abs(x - focusX);
+            let offsetY = abs(y - focusY);
+            let offset = map(offsetX + offsetY, 0, width, 0, TWO_PI);
+            let angle = frameCount * 0.01 + offset;
 
-          for (let i = 0; i < numPrisms; i++) {
-            let c = 5 * spiral.scale;
-            let r = c * sqrt(i);
-            let x = r * cos(spiral.angle);
-            let y = r * sin(spiral.angle);
-            let size = 5 * spiral.scale;
-            let hue = (spiral.angle * 2) % 360;
+            // Get the color of the current pixel
+            let index = (x + y * video.width) * 4;
+            let r = video.pixels[index];
+            let g = video.pixels[index + 1];
+            let b = video.pixels[index + 2];
 
-            fill(hue, 80, 80);
-            noStroke();
+            // Convert RGB to HSB
+            let c = color(r, g, b);
+            let hue = hue(c);
+            let saturation = saturation(c);
+            let brightness = brightness(c);
 
-            ellipse(x, y, size, size);
-            spiral.angle += radians(goldenAngle);
+            fill(hue, saturation, brightness);
+
+            rectMode(CENTER);
+            push();
+            translate(x + gridSize / 2, y + gridSize / 2);
+            rotate(angle);
+
+            let pulsateFactor = sin(frameCount * 0.05) * 0.2 + 1;
+            let size = rectSize * pulsateFactor;
+
+            // Shape variations based on distance from the focus point
+            if (offset < TWO_PI / 3) {
+              rect(0, 0, size, size);
+            } else if (offset < (2 * TWO_PI) / 3) {
+              triangle(-size / 2, size / 2, size / 2, size / 2
+              , 0, -size / 2);
+            } else {
+              ellipse(0, 0, size, size);
+            }
+            pop();
           }
-          pop();
         }
       }
     </script>
   </div>
 </body>
 </html>
+``
+
